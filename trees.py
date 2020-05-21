@@ -1,3 +1,6 @@
+# Machine Learning in Action by Peter Harrington
+# Manning publications
+# Chapter 3
 from math import log
 
 def createDataSet():
