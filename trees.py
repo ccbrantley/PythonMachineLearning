@@ -1,7 +1,9 @@
-# Machine Learning in Action by Peter Harrington
-# Manning publications
-# Chapter 3
+# Machine Learning in Action by Peter Harrington.
+# Manning publications.
+# Chapter 3.
+
 from math import log
+import operator
 
 def createDataSet():
     dataSet = [[1, 1, "yes"],
@@ -37,7 +39,7 @@ def calcShannonEnt(_dataSet):
 
 def chooseBestFeatureToSplit(_dataSet):
     numFeatures = len(_dataSet[0]) - 1
-    baseEntroppy = calcShannonEnt(_dataSet)
+    baseEntropy = calcShannonEnt(_dataSet)
     bestInfoGain = 0.0; bestFeature = -1
     for i in range(numFeatures):
         featList = [example[i] for example in _dataSet]
@@ -49,9 +51,41 @@ def chooseBestFeatureToSplit(_dataSet):
             newEntropy += prob * calcShannonEnt(subDataSet)
         infoGain = baseEntropy - newEntropy
         if (infoGain > bestInfoGain):
-            bestinfoGain = infoGain
+            bestInfoGain = infoGain
             bestFeature = i
     return bestFeature
-            
 
+def majorityCnt(_classList):
+    classCount = {}
+    for vote in _classList:
+        if vote not in classCount.keys():
+            classCount[vote] = 0
+        classCount[vote] += 1
+    sortedClassCount = \
+                        sorted(classCount.iteritems(), \
+                        # Get the first item.
+                        key = operator.itemgetter(1), \
+                        reverse = True)
+    return sortedClassCount[0][0]
 
+def createTree(_dataSet, _labels):
+    classList = [example[-1] for example in _dataSet]
+    if classList.count(classList[0]) == len(classList):
+        return classList[0]
+    if len(_dataSet[0]) == 1:
+        return majorityCnt(classList)
+    bestFeat = chooseBestFeatureToSplit(_dataSet)
+    bestFeatLabel = _labels[bestFeat]
+    myTree = {bestFeatLabel:{}}
+    del(_labels[bestFeat])
+    featValues = [example[bestFeat] for example in _dataSet]
+    uniqueVals = set(featValues)
+    for value in uniqueVals:
+        # Create a copy of the _labels list.
+        subLabels = _labels[:]
+        myTree[bestFeatLabel][value] = \
+                        createTree(splitDataSet(_dataSet, \
+                        bestFeat, value), \
+                        subLabels)
+    return myTree
+    
