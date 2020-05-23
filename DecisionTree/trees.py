@@ -4,6 +4,7 @@
 
 from math import log
 import operator
+import pickle
 
 def createDataSet():
     dataSet = [[1, 1, "yes"],
@@ -88,4 +89,25 @@ def createTree(_dataSet, _labels):
                         bestFeat, value), \
                         subLabels)
     return myTree
-    
+
+def classify(_inputTree, _featLabels, _testVec):
+    firstStr = list(_inputTree.keys())[0]
+    secondDict = _inputTree[firstStr]
+    featIndex = _featLabels.index(firstStr)
+    for key in secondDict.keys():
+        if _testVec[featIndex] == key:
+            if type(secondDict[key]).__name__ == "dict":
+                classLabel = classify(secondDict[key], \
+                                      _featLabels, _testVec)
+            else:
+                classLabel = secondDict[key]
+    return classLabel
+
+def storeTree(_inputTree, _fileName):
+    fw = open(_fileName, 'wb')
+    pickle.dump(_inputTree, fw)
+    fw.close()
+
+def grabTree(_fileName):
+    fr = open(_fileName, 'rb')
+    return pickle.load(fr)
