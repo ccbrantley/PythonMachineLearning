@@ -3,7 +3,8 @@
 # Chapter 4
 
 from numpy import *
-    
+import re
+
 def loadDataSet():
     postingList = [["my", "dog", "has", "flea", \
                     "problems", "help", "him", "please"],
@@ -71,6 +72,54 @@ def classifyNB(_vec2Classify, _p0Vec, _p1Vec, _pClass1):
     else:
         return 0
 
+def textParse(_bigString):
+    listOfTokens = re.split(r'\W', _bigString)
+    return [tok.lower() for tok in listOfTokens if len(tok) > 2]
+
+def spamTest():
+    docList = []
+    classList = []
+    fullText = []
+    for i in range(1,26):
+        wordList  = textParse(open('email/spam/%d.txt' % i).read())
+        docList.append(wordList)
+        fullText.extend(wordList)
+        classList.append(1)
+        wordList = textParse(open('email/ham/%d.txt' % i).read())
+        docList.append(wordList)
+        fullText.extend(wordList)
+        classList.append(0)
+    vocabList = createVocabList(docList)
+    trainingSet = list(range(50))
+    testSet = []
+    
+    # Application of Hold-out cross validation.
+    for i in range(10):
+        randIndex = int(random.uniform(0, len(trainingSet)))
+        testSet.append(trainingSet[randIndex])
+        del(trainingSet[randIndex])
+    trainMat = []
+    trainClasses = []
+    
+    # Training.
+    for docIndex in trainingSet:
+        trainMat.append(setOfWords2Vec(vocabList, \
+                                       docList[docIndex]))
+        trainClasses.append(classList[docIndex])
+    p0V, p1V, pSpam = trainNB0(array(trainMat), \
+                               array(trainClasses))
+    errorCount = 0
+    
+    # Testing.
+    for docIndex in testSet:
+        wordVector = setOfWords2Vec(vocabList, \
+                                    docList[docIndex])
+        if classifyNB(array(wordVector), p0V, p1V, pSpam) \
+           != classList[docIndex]:
+            errorCount += 1
+    print( "The error rate is: ", float(errorCount) / \
+                                       len(testSet))
+
 def main():
     posts, labels = loadDataSet()
     vocabList = createVocabList(posts)
@@ -85,5 +134,10 @@ def main():
     testEntry2 = ["stupid", "garbage"]
     testVec = array(setOfWords2Vec(vocabList, testEntry2))
     print(testEntry2, "was classified as: ", \
-          classifyNB(testVec, p0V, p1V, pAB))
+          classifyNB(testVec, p0V, p1V, pAB), "\n")
+
+    print("Spam Email Classifier Error Rate")
+    for x in range(10):
+        spamTest()
+        
 main()
