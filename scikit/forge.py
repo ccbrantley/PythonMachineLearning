@@ -4,12 +4,16 @@
 
 from sklearn.datasets import load_breast_cancer
 from sklearn.datasets import load_boston
+from sklearn.datasets import make_blobs
 from sklearn.linear_model import Lasso
 from sklearn.linear_model import LinearRegression
+
+from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import Ridge
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neighbors import KNeighborsRegressor
+from sklearn.svm import LinearSVC
 import mglearn
 import matplotlib.pyplot as plt
 import numpy as np
@@ -210,8 +214,102 @@ def lassoRegression():
     plt.xlabel("Coefficient index")
     plt.ylabel("Coefficient magnitude")
     plt.show()
+
+def linearSVCLogistic():
+    X, y = mglearn.datasets.make_forge()
+    fig, axes = plt.subplots(1, 2, figsize = (10, 3))
+    for model, ax in \
+        zip([LinearSVC(max_iter = 2500), \
+             LogisticRegression(max_iter = 2500)], axes):
+        clf = model.fit(X, y)
+        mglearn.plots.plot_2d_separator(clf, X, fill = False, \
+                                        eps = .5, ax = ax, \
+                                        alpha = .7)
+        mglearn.discrete_scatter(X[:, 0], X[:, 1], y, ax = ax)
+        ax.set_title("{}".format(clf.__class__.__name__))
+        ax.set_xlabel("Feature 0")
+        ax.set_ylabel("Feature 1")
+    axes[0].legend()
+
+def logisticRegressionEg1():
+    cancer = load_breast_cancer()
+    XTrain, XTest, yTrain, yTest = train_test_split(\
+        cancer.data, cancer.target, stratify = cancer.target, \
+        random_state = 42)
+    logreg = LogisticRegression(max_iter = 2000, C = 1)\
+             .fit(XTrain, yTrain)
+    print("Training test score: {:,.3f}".format(\
+        logreg.score(XTrain, yTrain)))
+    print("Test set score: {:,.3f}".format(\
+        logreg.score(XTest, yTest)))
+    logreg001 = LogisticRegression(max_iter = 2000, C = .01)\
+                .fit(XTrain, yTrain)
+    print("Training set score (C = .01): {:,.3f}".format(\
+        logreg001.score(XTrain, yTrain)))
+    print("Test set score (C = .01): {:,.3f}".format(\
+        logreg001.score(XTest, yTest)))
+    logreg100 = LogisticRegression(max_iter = 2000, C = 100)\
+                .fit(XTrain, yTrain)
+    plt.plot(logreg.coef_.T, 'o', label = "C = 1")
+    plt.plot(logreg100.coef_.T, '^', label = "C = 100")
+    plt.plot(logreg001.coef_.T, 'v', label = "C = .001")
+    plt.xticks(range(cancer.data.shape[1]), \
+               cancer.feature_names, rotation = 90)
+    plt.hlines(0, 0, cancer.data.shape[1])
+    plt.ylim(-5, )
+    plt.xlabel("Coefficient index")
+    plt.ylabel("Coefficient magnitude")
+    plt.legend()
+    plt.show()
     
-    
+def logisticRegressionEg2():
+    cancer = load_breast_cancer()
+    XTrain, XTest, yTrain, yTest = train_test_split(\
+        cancer.data, cancer.target, stratify = cancer.target, \
+        random_state = 42)
+    for C, marker in zip([.001, 1, 100], ['o', '^', 'v']):
+        lrL1 = LogisticRegression(C = C, penalty = "l1", \
+               solver='liblinear').fit(XTrain, yTrain)
+        print("Training accuracy of l1 logreg with " \
+              "C = {:.3f}: {:.2f}".format(C, \
+               lrL1.score(XTrain, yTrain)))
+        print("Test accuracy of l1 logreg with " \
+              "C = {:.3f}: {:.2f}".format(C, \
+               lrL1.score(XTest, yTest)))
+        plt.plot(lrL1.coef_.T, marker, label = "C = {:.3f}"\
+                 .format(C))
+    plt.xticks(range(cancer.data.shape[1]), \
+               cancer.feature_names, rotation = 90)
+    plt.hlines(0, 0, cancer.data.shape[1])
+    plt.xlabel("Coefficient index")
+    plt.ylabel("Coefficient magnitude")
+    plt.ylim(-5, 5)
+    plt.legend(loc = 3)
+    plt.show()
+
+def logisticRegressionEg3():
+    X, y = make_blobs(random_state = 42)
+    linear_svm = LinearSVC().fit(X, y)
+    print("Coefficient shape: ", linear_svm.coef_.shape)
+    print("Intercept shape: ", linear_svm.intercept_.shape)
+    mglearn.plots.plot_2d_classification(linear_svm, X, \
+                                         fill = True, alpha = .7)
+    mglearn.discrete_scatter(X[:, 0], X[:, 1], y)
+    line = np.linspace(-15, 15)
+    for coef, intercept, color in zip(linear_svm.coef_, \
+        linear_svm.intercept_, ['b', 'r', 'g']):
+        plt.plot(line, -(line * coef[0] + intercept) / coef[1], \
+                 C = color)
+    plt.ylim(-10, 15)
+    plt.xlim(-10, 8)
+    plt.xlabel("Feature 0")
+    plt.ylabel("Feature 1")
+    plt.legend(["Class 0", "Class 1", "Class 2", \
+                "Line class 0", "Line class 1", \
+                "Line class 2"], loc = (1.01, .3))
+
+    plt.show()
+
 def cancerEG():
     cancer = load_breast_cancer() # Bunch Object.
     print("cancer.keys(): \n{}".format(cancer.keys()))
@@ -232,8 +330,6 @@ def bostonEG():
     X, y = mglearn.datasets.load_extended_boston()
     print("X.shape: {}".format(X.shape))
     
-    
-
 def main():
     #classificationEG()
     #regressionEG()
@@ -244,5 +340,9 @@ def main():
     #knnWaveEG()
     #leastSquaresEG()
     #ridgeRegression()
-    lassoRegression()
+    #lassoRegression()
+    #linearSVCLogistic()
+    #logisticRegressionEg1()
+    #logisticRegressionEg2()
+    logisticRegressionEg3()
 main()
